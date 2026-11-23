@@ -394,6 +394,13 @@ def emit_certificate(
         .add_extension(cx509.SubjectKeyIdentifier.from_public_key(csr.public_key()), critical=False)
     )
 
+    try:
+        issuer_ski = ca_cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_KEY_IDENTIFIER).value
+        aki = cx509.AuthorityKeyIdentifier.from_issuer_subject_key_identifier(issuer_ski)
+    except cx509.ExtensionNotFound:
+        aki = cx509.AuthorityKeyIdentifier.from_issuer_public_key(ca_cert.public_key())
+    builder = builder.add_extension(aki, critical=False)
+
     # AIA/CDP from CA
     if ca.get("urls", {}).get("ca_issuers_http"):
         aia = cx509.AuthorityInformationAccess([
